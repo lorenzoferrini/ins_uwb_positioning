@@ -1,0 +1,70 @@
+<?xml version="1.0" ?>
+<sdf version="1.5">
+  <world name="default">
+    <!-- A global light source -->
+    <include>
+      <uri>model://sun</uri>
+    </include>
+    <!-- A ground plane -->
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+
+    <model name="uwb_anchor0">
+      <pose>-1 -1 0.5 0 0 0</pose>
+      <static>1</static>
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>0.2 0.01 0.2</size>
+            </box>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+
+    <model name="uwb_anchor1">
+      <pose>9 -1 0.5 0 0 0</pose>
+      <static>1</static>
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>0.2 0.01 0.2</size>
+            </box>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+
+    <model name="uwb_anchor2">
+      <pose>-1 9 0.5 0 0 0</pose>
+      <static>1</static>
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>0.2 0.01 0.2</size>
+            </box>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+
+    <model name="uwb_anchor3">
+      <pose>9 9 0.5 0 0 0</pose>
+      <static>1</static>
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>0.2 0.01 0.2</size>
+            </box>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+
+  </world>
+</sdf>
