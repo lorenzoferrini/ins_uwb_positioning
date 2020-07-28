@@ -27,14 +27,19 @@ chmod +x ./start_all.sh && ./start_all.sh
 ```
 In order to start visualizing data in rqt plot you should hit the play button on the top right of each graph 
 ## Folders
+
 ###src
 Contains Python scripts which performs navigation. In particular *node_sage-husa.py* sets the node up and *shfaf.py* contains the filter class.
+
 ###data
 Contains data exported as csv of simulation run with different filter configurations
+
 ##launch
 Contains roslaunch script to spawn husky with IMU and UWB tag (*spawn_husky_uwb.launch, description.launch*),
  Husky controls (*control.launch*), and to launch the empty world with UWB antennas in place (*uwb_empty.launch*)
+
  ## models
  Contains Husky urdf xacro model
+ 
  ##worlds
  Contains different world configuration
