@@ -94,10 +94,10 @@ def model_callback(data):
         q[3] = data.pose[5].orientation.z
         filter = shfaf(R=None, Q=None, P=None, x=x, q=q, window_width=10, a=0.9784)
         filter.nAnchors = 4
-        filter.anchorPos = np.array([[-5, -1],
-                                     [1, -1],
-                                     [1, 5],
-                                     [-5, 5],
+        filter.anchorPos = np.array([[-1, -1],
+                                     [9, -1],
+                                     [-1, 9],
+                                     [9, 9],
                                      ])
         rospy.loginfo('Filter initialized at x: ')
         rospy.loginfo(filter.x[:6])
