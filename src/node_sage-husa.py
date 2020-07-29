@@ -73,11 +73,10 @@ def uwb_callback(data):
             filter.uwbCeck = np.zeros(4)
 
 def activation_callback(data):
+    global filter
     filter.mode = data.data
     if data.data == 3:
-        self.x[6:9, :] = 0
-    else:
-        self.x[6:9, :] = 0.1
+        filter.x_[6:9, :] = 0
 
 
 def model_callback(data):
@@ -93,7 +92,7 @@ def model_callback(data):
         x[1] = data.pose[5].position.y
         x[3] = data.twist[5].linear.x
         x[4] = data.twist[5].linear.y
-        x[6:9] = 0.095
+        x[6:9] = 0.0
         q[0] = data.pose[5].orientation.w
         q[1] = 0
         q[2] = 0

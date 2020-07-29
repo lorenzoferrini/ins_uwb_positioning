@@ -26,7 +26,7 @@ class shfaf(object):
         if Q is None:
             Q = np.diag([0.06**2,0.06**2,0.06**2,0,0,0,0.1,0.1,0.1,0,0,0])
         if P is None:
-            P = np.diag([0.05,0.05,0.05,0,0,0,0,0,0,0.1,0.1,0.1,0,0,0])
+            P = np.diag([0.05,0.05,0.05,0,0,0,0,0,0,0.01,0.01,0.01,0,0,0])
         if x is None:
             x = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                          np.float)  # position, velocity, acceleration bias, omega bias
@@ -159,7 +159,6 @@ class shfaf(object):
                       [np.zeros((3, 9), np.float), np.identity(3, np.float), np.zeros((3, 3), np.float)],
                       [np.zeros((3, 12), np.float), np.identity(3, np.float)]])
         self.P_ = (F.dot(P.dot(F.T)) + self.lamb.dot(Q.dot(self.lamb.T)))
-        rospy.loginfo(x[6:9, :])
         self.dx_ = F.dot(self.dx)
         # self.innovation_ = push(self.innovation_, d)
         self.k = self.k + 1
