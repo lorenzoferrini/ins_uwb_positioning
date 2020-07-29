@@ -19,14 +19,14 @@ def push(x, y):
 
 
 class shfaf(object):
-    def __init__(self, R=None, Q=None, P=None, x=None, q=None, window_width=12, a=0.9784):
+    def __init__(self, R=None, Q=None, P=None, x=None, q=None, window_width=12, a=0.95):
 
         if R is None:
-            R = np.diag([1,1,1,1,1,1]) * 1e-1*4
+            R = np.diag([1,1,1,1*5,1*5,1*5]) * 1e-1
         if Q is None:
-            Q = np.diag([0.06**2,0.06**2,0,1,1,0,1,1,1,1,1,1])
+            Q = np.diag([0.06**2,0.06**2,0.06**2,0,0,0,0.1,0.1,0.1,0,0,0])
         if P is None:
-            P = np.identity(15, np.float) * 0.0
+            P = np.diag([0.05,0.05,0.05,0,0,0,0,0,0,0.1,0.1,0.1,0,0,0])
         if x is None:
             x = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                          np.float)  # position, velocity, acceleration bias, omega bias
@@ -78,7 +78,7 @@ class shfaf(object):
             np.newaxis].T  # position, velocity, orientation, acceleration bias, omega bias
         self.dx_ = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], np.float)[
             np.newaxis].T  # position, velocity, orientation, acceleration bias, omega bias
-        self.innovation = np.random.normal(0.0,0.1,(6, window_width))*0
+        self.innovation = np.random.normal(0.0,0.1,(6, window_width))
         self.error = (np.random.rand(15, window_width)-1)*0.1
         # self.innovation_ = np.zeros((6,window_width), np.float)
         self.k = 0  # Iteration counter
@@ -134,7 +134,6 @@ class shfaf(object):
             P = self.P
             q = self.q
         C = self._rotationMatrix(q)
-        # rospy.loginfo(C)
         self.Q = sp.linalg.block_diag(np.eye(3)*((0.06*dt)**2),   np.eye(3)*((0.0*dt)**2),
             np.eye(3)*((0.001*dt)**2),  np.eye(3)*((0.0*dt)**2))
         Q = self.Q
@@ -160,6 +159,7 @@ class shfaf(object):
                       [np.zeros((3, 9), np.float), np.identity(3, np.float), np.zeros((3, 3), np.float)],
                       [np.zeros((3, 12), np.float), np.identity(3, np.float)]])
         self.P_ = (F.dot(P.dot(F.T)) + self.lamb.dot(Q.dot(self.lamb.T)))
+        rospy.loginfo(x[6:9, :])
         self.dx_ = F.dot(self.dx)
         # self.innovation_ = push(self.innovation_, d)
         self.k = self.k + 1
@@ -225,11 +225,11 @@ class shfaf(object):
         self.P = (np.identity(15, float) - self.K.dot(H)).dot(self.P_)
 
         # Update the nominal state
-        dx_pos = np.concatenate((self.dx[:6], self.dx[9:]*0))
+        dx_pos = np.concatenate((self.dx[:6], self.dx[9:]))
         self.x = self.x_ + dx_pos
 
         # Reset the error state
-        self.dx = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], np.float)[np.newaxis].T #NON SICURO
+        self.dx = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], np.float)[np.newaxis].T
         self.dx_ = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], np.float)[np.newaxis].T
         self.pred = 0
         self.k = 0

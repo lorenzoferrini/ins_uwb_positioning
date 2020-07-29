@@ -74,6 +74,11 @@ def uwb_callback(data):
 
 def activation_callback(data):
     filter.mode = data.data
+    if data.data == 3:
+        self.x[6:9, :] = 0
+    else:
+        self.x[6:9, :] = 0.1
+
 
 def model_callback(data):
     global init
@@ -88,6 +93,7 @@ def model_callback(data):
         x[1] = data.pose[5].position.y
         x[3] = data.twist[5].linear.x
         x[4] = data.twist[5].linear.y
+        x[6:9] = 0.095
         q[0] = data.pose[5].orientation.w
         q[1] = 0
         q[2] = 0
@@ -100,7 +106,7 @@ def model_callback(data):
                                      [9, 9],
                                      ])
         rospy.loginfo('Filter initialized at x: ')
-        rospy.loginfo(filter.x[:6])
+        rospy.loginfo(filter.x)
         rospy.loginfo('q: ')
         rospy.loginfo(filter.q)
         init = 0
@@ -109,8 +115,8 @@ def model_callback(data):
     filter.q[2] = 0
     filter.q[3] = data.pose[5].orientation.z
     if count % 200 == 0 and init==0:
-        out = np.greater(np.random.rand(), 0.90).astype(int)
-        pos_outlier = out * np.random.normal(0,4,3)
+        out = np.greater(np.random.rand(), 0.95).astype(int)
+        pos_outlier = out * (np.random.rand(3)-0.5)*4
         pos_true[0] = data.pose[5].position.x
         pos_true[1] = data.pose[5].position.y
         pos_true[2] = data.pose[5].position.z
