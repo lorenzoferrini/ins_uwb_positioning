@@ -22,11 +22,11 @@ class shfaf(object):
     def __init__(self, R=None, Q=None, P=None, x=None, q=None, window_width=12, a=0.95):
 
         if R is None:
-            R = np.diag([1,1,1,1*5,1*5,1*5]) * 1e-1
+            R = np.diag([1, 1, 1, 1 * 5, 1 * 5, 1 * 5]) * 1e-1
         if Q is None:
-            Q = np.diag([0.06**2,0.06**2,0.06**2,0,0,0,0.1,0.1,0.1,0,0,0])
+            Q = np.diag([0.06 ** 2, 0.06 ** 2, 0.06 ** 2, 0, 0, 0, 0.1, 0.1, 0.1, 0, 0, 0])
         if P is None:
-            P = np.diag([0.05,0.05,0.05,0,0,0,0,0,0,0.01,0.01,0.01,0,0,0])
+            P = np.diag([0.1, 0.1, 0.1, 0.05, 0.05, 0.05, 0, 0, 0, 0.01, 0.01, 0.01, 0, 0, 0])
         if x is None:
             x = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                          np.float)  # position, velocity, acceleration bias, omega bias
@@ -62,7 +62,7 @@ class shfaf(object):
         self.pred = 0  # flag which states if prediction or correction has been performed last
         beta = 0
         self.G = 1 - np.square(beta)
-        self.H_uwb = np.square(1-beta)
+        self.H_uwb = np.square(1 - beta)
 
         self.R = R
         self.Q = Q
@@ -78,8 +78,8 @@ class shfaf(object):
             np.newaxis].T  # position, velocity, orientation, acceleration bias, omega bias
         self.dx_ = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], np.float)[
             np.newaxis].T  # position, velocity, orientation, acceleration bias, omega bias
-        self.innovation = np.random.normal(0.0,0.1,(6, window_width))
-        self.error = (np.random.rand(15, window_width)-1)*0.1
+        self.innovation = np.random.normal(0.0, 0.1, (6, window_width))
+        self.error = (np.random.rand(15, window_width) - 1) * 0.1
         # self.innovation_ = np.zeros((6,window_width), np.float)
         self.k = 0  # Iteration counter
         self.lambda_ = 1.0119  # Sage Huza ICW coefficent
@@ -90,13 +90,13 @@ class shfaf(object):
 
         # Fuzzy inference
 
-        input = ctrl.Antecedent(np.arange(0,0.9,0.1), 'r')
-        output = ctrl.Consequent(np.arange(0.8,2.1,0.1), 's')
+        input = ctrl.Antecedent(np.arange(0, 0.9, 0.1), 'r')
+        output = ctrl.Consequent(np.arange(0.8, 2.1, 0.1), 's')
 
         # Define membership functions
-        input['less'] = fuzz.trimf(input.universe, [0,0,0.3])
-        input['equal'] = fuzz.trimf(input.universe,[0.1,0.4,0.7])
-        input['more'] = fuzz.trimf(input.universe,[0.5,0.8,0.8])
+        input['less'] = fuzz.trimf(input.universe, [0, 0, 0.3])
+        input['equal'] = fuzz.trimf(input.universe, [0.1, 0.4, 0.7])
+        input['more'] = fuzz.trimf(input.universe, [0.5, 0.8, 0.8])
 
         output['less'] = fuzz.trimf(output.universe, [0.8, 0.8, 1.2])
         output['equal'] = fuzz.trimf(output.universe, [1, 1.4, 1.8])
@@ -119,7 +119,7 @@ class shfaf(object):
 
         am = am[np.newaxis].T
         wm = wm[np.newaxis].T
-        wm[:2,:] = 0
+        wm[:2, :] = 0
         if self.uwbInit:
             dt = t - self.time
         else:
@@ -134,8 +134,8 @@ class shfaf(object):
             P = self.P
             q = self.q
         C = self._rotationMatrix(q)
-        self.Q = sp.linalg.block_diag(np.eye(3)*((0.06*dt)**2),   np.eye(3)*((0.0*dt)**2),
-            np.eye(3)*((0.001*dt)**2),  np.eye(3)*((0.0*dt)**2))
+        self.Q = sp.linalg.block_diag(np.eye(3) * ((0.06 * dt) ** 2), np.eye(3) * ((0.0 * dt) ** 2),
+                                      np.eye(3) * ((0.001 * dt) ** 2), np.eye(3) * ((0.0 * dt) ** 2))
         Q = self.Q
         w = wm * dt
         g = np.array([0, 0, 9.8])[np.newaxis].T
@@ -147,20 +147,21 @@ class shfaf(object):
 
         if np.linalg.norm(w) != 0:
             qq = quaternion.as_quat_array(q)
-            wq = quaternion.from_rotation_vector(w[:,0] * np.array((0,0,1)))
+            wq = quaternion.from_rotation_vector(w[:, 0] * np.array((0, 0, 1)))
             q_next = quaternion.as_float_array(qq * wq)
         else:
-            q_next  = q
+            q_next = q
         F = np.block([[np.identity(3, np.float), np.identity(3, np.float) * dt, np.zeros((3, 9))],
                       [np.zeros((3, 3), np.float), np.identity(3, np.float), -(C.dot(skew(am - x[6:9, :]))) * dt,
                        -C * dt, np.zeros((3, 3), np.float)],
-                      [np.zeros((3, 6), np.float), self._rotationMatrix(quaternion.as_float_array(quaternion.from_euler_angles(((wm - x[9:12, :])*dt)[:,0]))), np.zeros((3, 3), np.float),
+                      [np.zeros((3, 6), np.float), self._rotationMatrix(
+                          quaternion.as_float_array(quaternion.from_euler_angles(((wm - x[9:12, :]) * dt)[:, 0]))),
+                       np.zeros((3, 3), np.float),
                        -np.identity(3, np.float) * dt],
                       [np.zeros((3, 9), np.float), np.identity(3, np.float), np.zeros((3, 3), np.float)],
                       [np.zeros((3, 12), np.float), np.identity(3, np.float)]])
         self.P_ = (F.dot(P.dot(F.T)) + self.lamb.dot(Q.dot(self.lamb.T)))
         self.dx_ = F.dot(self.dx)
-        # self.innovation_ = push(self.innovation_, d)
         self.k = self.k + 1
         self.x_ = x_next
         self.q_ = q_next
@@ -197,7 +198,7 @@ class shfaf(object):
             G = S + H.dot(self.dx_.dot(self.dx_.T.dot(H.T)))
             m = (np.abs(np.diagonal(G) / np.diagonal(D)))[np.newaxis].T
             check = np.greater(m, self.threshold).astype(int)[np.newaxis].T
-            z = (z * (check * (1 / np.sqrt(m)-1) + 1)).reshape(-1, 1)
+            z = (z * (check * (1 / np.sqrt(m) - 1) + 1)).reshape(-1, 1)
 
         self.innovation = ep
         if self.mode == 0:
@@ -213,7 +214,7 @@ class shfaf(object):
 
         # Estimate measurement noise covariance
         self.R = (1 - np.power(s, self.alpha) * d) * self.R + np.power(s, self.alpha) * d * (
-                    S - H.dot(self.P_.dot(H.T)))
+                S - H.dot(self.P_.dot(H.T)))
 
         # Calculate Kalman gain
         self.K = self.P_.dot(H.T.dot(np.linalg.inv(H.dot(self.P_.dot(H.T)) + self.R)))
@@ -226,6 +227,9 @@ class shfaf(object):
         # Update the nominal state
         dx_pos = np.concatenate((self.dx[:6], self.dx[9:]))
         self.x = self.x_ + dx_pos
+        dq = quaternion.from_euler_angles(np.concatenate((np.zeros(2), self.dx[8])))
+        self.q = quaternion.as_float_array(quaternion.from_float_array(self.q_) * dq)
+
 
         # Reset the error state
         self.dx = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], np.float)[np.newaxis].T
@@ -242,8 +246,8 @@ class shfaf(object):
         b = np.square(r[1:]) - np.square(r[0]) + np.square(anc[0, 0]) - np.square(anc[1:, 0]) + np.square(
             anc[0, 1]) - np.square(anc[1:, 1])  # + np.square(anc[0,2]) - np.square(anc[1:,2])
         pos_ = 0.5 * np.linalg.inv(G.T.dot(G)).dot(G.T.dot(b))
-        pos = self.posOld + self.velOld * dt + self.G * (pos_ - ( self.posOld + self.velOld * dt))
-        vel = self.velOld + self.H_uwb/dt * (pos_ - (self.posOld + self.velOld*dt))
+        pos = self.posOld + self.velOld * dt + self.G * (pos_ - (self.posOld + self.velOld * dt))
+        vel = self.velOld + self.H_uwb / dt * (pos_ - (self.posOld + self.velOld * dt))
         self.uwbTime = t
         self.posOld = pos
         self.velOld = vel

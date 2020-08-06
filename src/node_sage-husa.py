@@ -4,10 +4,12 @@
 
 
 import rospy
+import quaternion
 import numpy as np
 from sensor_msgs.msg import Imu
 from nav_msgs.msg import Odometry
 from gazebo_msgs.msg import LinkStates
+from geometry_msgs.msg import Vector3
 from gtec_msgs.msg import Ranging
 from std_msgs.msg import Int8
 from std_msgs.msg import Float32
@@ -15,7 +17,10 @@ from shfaf import shfaf
 
 pub_filter = rospy.Publisher('filter_position', Odometry, queue_size=1)
 pub_uwb = rospy.Publisher('uwb_position', Odometry, queue_size=1)
+pub_heading = rospy.Publisher('filter_heading', Float32 , queue_size=1)
+pub_heading_true = rospy.Publisher('true_heading', Float32 , queue_size=1)
 pub_error = rospy.Publisher('filter_error', Float32 , queue_size=1)
+pub_bias = rospy.Publisher('filter_bias', Vector3 , queue_size=1)
 init = 1
 count = 0
 
@@ -46,15 +51,24 @@ def imu_callback(data):
         odom.twist.twist.angular.z = 0
         pub_filter.publish(odom)
 
+        bias = Vector3()
+        bias.x = filter.x_[6,0]
+        bias.y = filter.x_[7,0]
+        bias.z = filter.x_[8,0]
+        pub_bias.publish(bias)
+
+        heading = quaternion.as_euler_angles(quaternion.from_float_array(q))
+        pub_heading.publish(heading[2])
+
         x_uwb = filter.posOld
         vel_uwb = filter.velOld
         odom_uwb = Odometry()
         odom_uwb.pose.pose.position.x = x_uwb[0]
         odom_uwb.pose.pose.position.y = x_uwb[1]
-        odom_uwb.pose.pose.position.z = 0
+        odom_uwb.pose.pose.position.z = x_uwb[2]
         odom_uwb.twist.twist.linear.x = vel_uwb[0]
         odom_uwb.twist.twist.linear.y = vel_uwb[1]
-        odom_uwb.twist.twist.linear.z = 0
+        odom_uwb.twist.twist.linear.z = vel_uwb[2]
         odom_uwb.twist.twist.angular.x = 0
         odom_uwb.twist.twist.angular.y = 0
         odom_uwb.twist.twist.angular.z = 0
@@ -75,8 +89,8 @@ def uwb_callback(data):
 def activation_callback(data):
     global filter
     filter.mode = data.data
-    if data.data == 3:
-        filter.x_[6:9, :] = 0
+    # if data.data == 3:
+    #     filter.x_[6:9, :] = 0
 
 
 def model_callback(data):
@@ -97,7 +111,7 @@ def model_callback(data):
         q[1] = 0
         q[2] = 0
         q[3] = data.pose[5].orientation.z
-        filter = shfaf(R=None, Q=None, P=None, x=x, q=q, window_width=10, a=0.9784)
+        filter = shfaf(R=None, Q=None, P=None, x=x, q=q, window_width=100, a=0.9784)
         filter.nAnchors = 4
         filter.anchorPos = np.array([[-1, -1],
                                      [9, -1],
@@ -109,20 +123,20 @@ def model_callback(data):
         rospy.loginfo('q: ')
         rospy.loginfo(filter.q)
         init = 0
-    filter.q[0] = data.pose[5].orientation.w
-    filter.q[1] = 0
-    filter.q[2] = 0
-    filter.q[3] = data.pose[5].orientation.z
+    true_q = np.array([data.pose[5].orientation.w, 0, 0, data.pose[5].orientation.z])
+    heading_true = quaternion.as_euler_angles(quaternion.from_float_array(true_q))
+    pub_heading_true.publish(heading_true[2])
     if count % 200 == 0 and init==0:
         out = np.greater(np.random.rand(), 0.95).astype(int)
         pos_outlier = out * (np.random.rand(3)-0.5)*4
         pos_true[0] = data.pose[5].position.x
         pos_true[1] = data.pose[5].position.y
         pos_true[2] = data.pose[5].position.z
-        filter.posOld = pos_true + np.random.normal(0,0.1,3) + pos_outlier
-        filter.velOld[0] = data.twist[5].linear.x + np.random.normal(0.0, 0.1) + pos_outlier[0]*5
-        filter.velOld[1] = data.twist[5].linear.y + np.random.normal(0.0, 0.1) + pos_outlier[1]*5
-        filter.velOld[2] = data.twist[5].linear.z + np.random.normal(0.0, 0.1) + pos_outlier[2]*5
+        uwb_noise = np.random.normal(0,0.1,3)
+        filter.posOld = pos_true + uwb_noise + pos_outlier
+        filter.velOld[0] = data.twist[5].linear.x + np.random.normal(0.0, 0.1) + uwb_noise[0]*5 + pos_outlier[0]*5
+        filter.velOld[1] = data.twist[5].linear.y + np.random.normal(0.0, 0.1) + uwb_noise[1]*5  + pos_outlier[1]*5
+        filter.velOld[2] = data.twist[5].linear.z + np.random.normal(0.0, 0.1) + uwb_noise[2]*5  + pos_outlier[2]*5
         error = np.linalg.norm(pos_true - filter.x_[:3,0])
         pub_error.publish(error)
         if filter.mode != 3:
